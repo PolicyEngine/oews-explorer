@@ -14,29 +14,74 @@ df = load_data()
 
 st.title("Wage Percentiles Explorer")
 
+
+# Helper function to get unique sorted values
+def get_unique_sorted(column):
+    return sorted(df[column].unique())
+
+
+# Initialize query parameters
+if "geo_level" not in st.query_params:
+    st.query_params["geo_level"] = "National"
+if "selected_geo" not in st.query_params:
+    st.query_params["selected_geo"] = "National"
+if "selected_job" not in st.query_params:
+    st.query_params["selected_job"] = get_unique_sorted("OCC_TITLE")[0]
+
 # Sidebar for user input
 st.sidebar.header("Select Filters")
 
 # Geography selection
 geo_level = st.sidebar.selectbox(
-    "Geographic Level", ["National", "State", "Metropolitan"]
+    "Geographic Level",
+    ["National", "State", "Metropolitan"],
+    index=["National", "State", "Metropolitan"].index(
+        st.query_params["geo_level"]
+    ),
 )
 
 if geo_level == "National":
     selected_geo = "National"
 elif geo_level == "State":
     selected_geo = st.sidebar.selectbox(
-        "Select State", sorted(df["PRIM_STATE"].unique())
+        "Select State",
+        get_unique_sorted("PRIM_STATE"),
+        index=(
+            get_unique_sorted("PRIM_STATE").index(
+                st.query_params["selected_geo"]
+            )
+            if st.query_params["selected_geo"]
+            in get_unique_sorted("PRIM_STATE")
+            else 0
+        ),
     )
 else:
     selected_geo = st.sidebar.selectbox(
-        "Select Metropolitan Area", sorted(df["AREA_TITLE"].unique())
+        "Select Metropolitan Area",
+        get_unique_sorted("AREA_TITLE"),
+        index=(
+            get_unique_sorted("AREA_TITLE").index(
+                st.query_params["selected_geo"]
+            )
+            if st.query_params["selected_geo"]
+            in get_unique_sorted("AREA_TITLE")
+            else 0
+        ),
     )
 
 # Job selection
 selected_job = st.sidebar.selectbox(
-    "Select Occupation", sorted(df["OCC_TITLE"].unique())
+    "Select Occupation",
+    get_unique_sorted("OCC_TITLE"),
+    index=get_unique_sorted("OCC_TITLE").index(
+        st.query_params["selected_job"]
+    ),
 )
+
+# Update query parameters
+st.query_params["geo_level"] = geo_level
+st.query_params["selected_geo"] = selected_geo
+st.query_params["selected_job"] = selected_job
 
 # Filter data
 if geo_level == "National":
@@ -53,7 +98,10 @@ else:
     ]
 
 # Display results
-st.header(f"{selected_job} in {selected_geo}")
+if geo_level == "National":
+    st.header(f"{selected_job} in the United States")
+else:
+    st.header(f"{selected_job} in {selected_geo}")
 
 if not filtered_df.empty:
     # Display percentiles
@@ -76,15 +124,15 @@ if not filtered_df.empty:
     wage_df = pd.DataFrame(
         {
             "Percentile": percentile_labels,
-            "Hourly Wage": wage_data[percentiles[:5]].values,
-            "Annual Wage": wage_data[percentiles[5:]].values,
+            "Hourly": wage_data[percentiles[:5]].values,
+            "Annual": wage_data[percentiles[5:]].values,
         }
     )
 
-    wage_df["Hourly Wage"] = wage_df["Hourly Wage"].apply(
+    wage_df["Hourly"] = wage_df["Hourly"].apply(
         lambda x: f"${x:.2f}" if pd.notnull(x) else "N/A"
     )
-    wage_df["Annual Wage"] = wage_df["Annual Wage"].apply(
+    wage_df["Annual"] = wage_df["Annual"].apply(
         lambda x: f"${x:,.0f}" if pd.notnull(x) else "N/A"
     )
 
@@ -110,7 +158,7 @@ else:
 # Data source and notes
 st.sidebar.markdown("---")
 st.sidebar.info(
-    "Data Source: Bureau of Labor Statistics, Occupational Employment and Wage Statistics"
+    "Data Source: [Bureau of Labor Statistics, Occupational Employment and Wage Statistics 2023](https://www.bls.gov/oes/)"
     "\n\nNote: 'N/A' indicates missing or unavailable data."
-    "\n\nFor questions or feedback, please contact [Max Ghenis](mailto:max@policyengine.org)."
+    "\n\nCreated by [Max Ghenis](https://x.com/MaxGhenis)",
 )
