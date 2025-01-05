@@ -160,5 +160,5 @@ st.sidebar.markdown("---")
 st.sidebar.info(
     "Data Source: [Bureau of Labor Statistics, Occupational Employment and Wage Statistics 2023](https://www.bls.gov/oes/)"
     "\n\nNote: 'N/A' indicates missing or unavailable data."
-    "\n\nCreated by [Max Ghenis](https://x.com/MaxGhenis)",
+    "\n\nCreated by [Max Ghenis](https://maxghenis.com)",
 )
